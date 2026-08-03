@@ -1,0 +1,46 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+group = 'com.mycraftdailyshop'
+version = '1.0.1'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    maven { url = 'https://jitpack.io' }
+}
+
+dependencies {
+    compileOnly('org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT') {
+        exclude group: 'net.md-5', module: 'bungeecord-chat'
+    }
+    compileOnly 'com.github.MilkBowl:VaultAPI:1.7'
+    implementation 'org.xerial:sqlite-jdbc:3.42.0.0'
+    implementation 'com.zaxxer:HikariCP:4.0.3'
+    implementation 'com.mysql:mysql-connector-j:8.0.33'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.yaml:snakeyaml:1.30'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    mergeServiceFiles()
+    relocate 'com.zaxxer.hikari', 'com.mycraftdailyshop.lib.hikari'
+}
+
+build.dependsOn shadowJar

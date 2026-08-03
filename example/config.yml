@@ -1,0 +1,19 @@
+
+shop:
+  # 点击冷却，单位：毫秒
+  click_cooldown: 200
+
+database:
+  # 可用数据库：SQLite、MYSQL
+  type: MySQL
+  # 清理数据天数，写-1时代表不自动清理
+  clearDay: -1
+  # MySQL配置
+  MySQL:
+    host: localhost
+    port: 33066
+    username: mycraftdailyshop
+    password: xxxxxx
+    database: mycraftdailyshop
+    # 链接超时时间
+    ConnectionTimeout: 5000

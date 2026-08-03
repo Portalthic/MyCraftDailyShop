@@ -1,0 +1,46 @@
+message:
+
+  # 用于展示所有可能售卖/收购的商品界面时的补充lore（添加在商品物品lore下方）
+  SellListItemLore:
+  - ''
+  - '&a该物品出售价格范围为&6[minMoney] &a- &6[maxMoney]&a手艺币'
+  - '&a该物品每天每人限购买&c[number]&a次'
+  - '&a该物品每天全服限购买&c[allNumber]&a次'
+  - '&a刷出概率: [level]'
+  BuyListItemLore:
+  - ''
+  - '&a该物品每次收购需要&6[amount]&a个'
+  - '&a该物品收购价格范围为&6[minMoney] &a- &6[maxMoney]&a手艺币'
+  - '&a该物品每天每人限出售&c[number]&a次'
+  - '&a该物品每天全服限出售&c[allNumber]&a次'
+  - '&a刷出概率: [level]'
+
+  # 收购商店的商品lore部分（添加在商品物品lore下方）
+  SellShopItemLore:
+  - ''
+  - ' §|2 &a购买价格为&6[money]&a手艺币'
+  - ' §|2 &a店主还会向你售出&e[number]&a次'
+  - ' §|2 &a存货共剩余售出&c[allNumber]&a次'
+  - ' §|2 &a稀有等级: [level]'
+  - ''
+  BuyShopItemLore:
+  - ''
+  - ' §|2 &a收购价格为&6[money]&a手艺币'
+  - ' §|2 &a每次收购需要&e[amount]&a个'
+  - ' §|2 &a店主还会向你收购&c[number]&a次'
+  - ' §|2 &a共还会向外部收购&c[allNumber]&a次'
+  - ' §|2 &a稀有等级: [level]'
+  - ''
+
+  # 个人限购/限卖达到上限的消息
+  SellNoNumber: '&c今天你买的够多了，下次再来吧。'
+  BuyNoNumber: '&c今天你卖的够多了，下次再来吧。'
+
+  # 全服限购/限卖达到上限的消息（优先级比个人高）
+  SellNoNumberServer: '&c今天的商品已经被卖完了，下次再来吧。'
+  BuyNoNumberServer: '&c今天已经收购到足够多商品了，下次再来吧。'
+
+  # 没钱购买商品
+  NoSpendMoney: '&c你买不起哦'
+  # 没有足够多物品
+  NoSpendItem: '&c你没有那么多物品！'

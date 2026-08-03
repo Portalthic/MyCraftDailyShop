@@ -1,0 +1,34 @@
+name: MyCraftDailyShop
+main: com.mycraftdailyshop.MyCraftDailyShopPlugin
+version: 1.0.1
+author: MyCraft
+description: Configurable daily random shops for Paper 1.12.2.
+depend: [Vault, Zaphkiel]
+softdepend: [PlaceholderAPI]
+commands:
+  mycraftdailyshop:
+    description: MyCraftDailyShop administrator command
+    aliases: [mds]
+    permission: mycraftdailyshop.admin
+permissions:
+  mycraftdailyshop.admin:
+    default: op
+    children:
+      mycraftdailyshop.command.open: true
+      mycraftdailyshop.command.show: true
+      mycraftdailyshop.command.quota: true
+      mycraftdailyshop.command.refresh: true
+      mycraftdailyshop.command.reload: true
+      mycraftdailyshop.command.validate: true
+  mycraftdailyshop.command.open:
+    default: op
+  mycraftdailyshop.command.show:
+    default: op
+  mycraftdailyshop.command.quota:
+    default: op
+  mycraftdailyshop.command.refresh:
+    default: op
+  mycraftdailyshop.command.reload:
+    default: op
+  mycraftdailyshop.command.validate:
+    default: op

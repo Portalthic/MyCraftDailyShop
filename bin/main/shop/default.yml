@@ -1,0 +1,82 @@
+# 每个顶层节点定义一个独立商店，节点名称即商店 ID。
+default_sellshop:
+  enabled: true
+  # sell 表示向玩家出售物品，buy 表示向玩家收购物品。
+  type: 'sell'
+  # personal 为每名玩家独立随机，server 为全服共享随机结果。
+  scene: 'personal'
+
+  refresh:
+    # 支持 daily、weekly:1,3,5、monthly:1,15 等格式。
+    type: 'daily'
+    time: '17:00:00'
+
+  # 计划刷新时向全服广播；留空或删除节点表示不发送。
+  message:
+    restock: '&a每日商店已经完成进货。'
+    noshops: '&e每日商店本次没有获得任何商品。'
+
+  # 音效名称使用 Bukkit 1.12.2 Sound 枚举名称，大小写不敏感。
+  sound:
+    open_shop: null
+    success: 'ENTITY_VILLAGER_YES'
+    fail: 'ENTITY_VILLAGER_NO'
+
+  title: '&0每日商店 [[page]/[page_all]]'
+  layout:
+    - 'xxxx@xxxx'
+    - 'xooooooox'
+    - 'xooooooox'
+    - 'xooooooox'
+    - 'xooooooox'
+    - 'x<xx!xx>x'
+
+  icons:
+    'x':
+      type: item
+      display:
+        material: 'STAINED_GLASS_PANE'
+        data: 7
+        amount: 1
+        name: ' '
+        lore: []
+    '!':
+      type: item
+      display:
+        material: 'BEACON'
+        amount: 1
+        name: '&6账户余额'
+        lore:
+          - '&7当前拥有：&e%vault_eco_balance_formatted%'
+    'o':
+      type: shops
+    '<':
+      type: previous_page
+      display:
+        material: 'ARROW'
+        name: '&e上一页'
+    '>':
+      type: next_page
+      display:
+        material: 'ARROW'
+        name: '&e下一页'
+    '@':
+      type: sort
+      display:
+        material: 'DIAMOND'
+        name: '&b商品排序'
+        lore:
+          - '&7左键切换排序依据'
+          - '&7右键切换升序或降序'
+          - '&7当前：[sort] / [order]'
+
+  shops:
+    1:
+      id: 'zaphkiel:镇好剑'
+      # money 为单件价格；一次交易总价等于随机单价乘以随机数量。
+      money: 'N:200-800'
+      amount: '1'
+      # 限购值按交易次数计算，-1 表示不限次数。
+      limit_personal: '1-2'
+      limit_server: '-1'
+      chance: 0.15
