@@ -31,18 +31,24 @@ public final class ShopGui implements Listener {
 
     public ShopGui(JavaPlugin plugin, ShopService service, MessageService messages) {
         this.plugin = plugin; this.service = service; this.messages = messages;
+        Bukkit.getScheduler().runTaskTimer(plugin, this::refreshOpenServerShops, 20L, 20L);
     }
 
     public void open(Player player, ShopConfig shop) {
         messages.send(player, "shop.loading", Collections.emptyMap());
-        service.snapshot(player, shop).whenComplete((snapshot, error) -> Bukkit.getScheduler().runTask(plugin, () -> {
-            if (error != null) { messages.send(player, "shop.transaction-failed", Collections.emptyMap()); return; }
-            if (snapshot.getOffers().isEmpty()) {
-                if (shop.getNoShopsMessage() == null || shop.getNoShopsMessage().isEmpty()) messages.send(player, "shop.empty", Collections.emptyMap());
-                else player.sendMessage(messages.format(player, shop.getNoShopsMessage(), Collections.emptyMap()));
-            }
-            openHolder(player, new ShopHolder(shop, snapshot, false));
-        }));
+        service.snapshot(player, shop).whenComplete((snapshot, error) -> {
+            if (error != null) { Bukkit.getScheduler().runTask(plugin, () -> messages.send(player, "shop.transaction-failed", Collections.emptyMap())); return; }
+            service.usageBatch(snapshot, player).whenComplete((usage, usageError) -> Bukkit.getScheduler().runTask(plugin, () -> {
+                if (usageError != null) { messages.send(player, "shop.transaction-failed", Collections.emptyMap()); return; }
+                if (snapshot.getOffers().isEmpty()) {
+                    if (shop.getNoShopsMessage() == null || shop.getNoShopsMessage().isEmpty()) messages.send(player, "shop.empty", Collections.emptyMap());
+                    else player.sendMessage(messages.format(player, shop.getNoShopsMessage(), Collections.emptyMap()));
+                }
+                ShopHolder holder = new ShopHolder(shop, snapshot, false);
+                holder.putAllUsage(usage);
+                openHolder(player, holder);
+            }));
+        });
     }
 
     public void show(Player player, ShopConfig shop) { openHolder(player, new ShopHolder(shop, null, true)); }
@@ -58,7 +64,6 @@ public final class ShopGui implements Listener {
     }
 
     private void render(Player player, ShopHolder holder) {
-        long renderVersion = holder.nextRenderVersion();
         Inventory inventory = holder.getInventory();
         inventory.clear();
         List<?> entries = sorted(holder);
@@ -77,17 +82,10 @@ public final class ShopGui implements Listener {
                 int index = entryOffset + productSlot++;
                 if (index < entries.size()) {
                     Object entry = entries.get(index);
-                    inventory.setItem(slot, holder.isCatalog() ? catalogItem(player, holder.getShop(), (ProductConfig) entry) : offerItem(player, holder, (Offer) entry, null));
-                    if (!holder.isCatalog()) updateUsage(player, holder, (Offer) entry, slot, renderVersion);
+                    inventory.setItem(slot, holder.isCatalog() ? catalogItem(player, holder.getShop(), (ProductConfig) entry) : offerItem(player, holder, (Offer) entry, holder.getUsage(((Offer) entry).getIndex())));
                 }
             } else inventory.setItem(slot, ItemStackFactory.fromConfig(player, icon.getDisplay(), messages, vars));
         }
-    }
-
-    private void updateUsage(Player player, ShopHolder holder, Offer offer, int slot, long renderVersion) {
-        service.usage(offer, player).whenComplete((usage, error) -> Bukkit.getScheduler().runTask(plugin, () -> {
-            if (error == null && holder.getRenderVersion() == renderVersion && player.getOpenInventory().getTopInventory().getHolder() == holder) holder.getInventory().setItem(slot, offerItem(player, holder, offer, usage));
-        }));
     }
 
     private void reopen(Player player, ShopHolder holder) {
@@ -107,8 +105,8 @@ public final class ShopGui implements Listener {
         vars.put("maxMoney", product.getMoney().getMax().setScale(2, RoundingMode.HALF_UP).toPlainString());
         vars.put("minAmount", product.getAmount().getMin().setScale(0, RoundingMode.HALF_UP).toPlainString());
         vars.put("maxAmount", product.getAmount().getMax().setScale(0, RoundingMode.HALF_UP).toPlainString());
-        vars.put("personalLimit", product.getPersonalLimit().describeInteger());
-        vars.put("serverLimit", shop.getScene() == ShopScene.SERVER ? product.getServerLimit().describeInteger() : "-1");
+        vars.put("personalLimit", displayLimit(product.getPersonalLimit()));
+        vars.put("serverLimit", shop.getScene() == ShopScene.SERVER ? displayLimit(product.getServerLimit()) : "∞");
         vars.put("chance", String.format(Locale.US, "%.2f", product.getChance() * 100D));
         return ItemStackFactory.appendLore(base, messages.list(player, "lore." + (shop.getType() == ShopType.SELL ? "sell-catalog" : "buy-catalog"), vars));
     }
@@ -123,7 +121,10 @@ public final class ShopGui implements Listener {
         return ItemStackFactory.appendLore(base, messages.list(player, "lore." + (holder.getShop().getType() == ShopType.SELL ? "sell-offer" : "buy-offer"), vars));
     }
 
-    private String remaining(int limit, int used) { return limit < 0 ? "不限" : Integer.toString(Math.max(0, limit - used)); }
+    private String displayLimit(ValueSpec spec) {
+        return spec.getMin().signum() < 0 && spec.getMax().signum() < 0 ? "∞" : spec.describeInteger();
+    }
+    private String remaining(int limit, int used) { return limit < 0 ? "∞" : Integer.toString(Math.max(0, limit - used)); }
     private ItemStack missing(String id) { ItemStack item=new ItemStack(Material.BARRIER); ItemMeta meta=item.getItemMeta(); meta.setDisplayName("§c未知物品: " + id); item.setItemMeta(meta); return item; }
 
     private List<?> sorted(ShopHolder holder) {
@@ -166,7 +167,68 @@ public final class ShopGui implements Listener {
         long now=System.currentTimeMillis(),last=clickTimes.getOrDefault(player.getUniqueId(),0L),cooldown=plugin.getConfig().getLong("shop.click_cooldown",200L);if(now-last<cooldown){messages.send(player,"shop.cooldown",Collections.emptyMap());return;}clickTimes.put(player.getUniqueId(),now);
         if(holder.getShop().getType()==ShopType.SELL&&!service.hasMoney(player,offer.getTotalMoney())){messages.send(player,"shop.no-money",tradeVars(holder,offer));SoundUtil.play(player,holder.getShop().getFailSound());return;}
         if(holder.getShop().getType()==ShopType.BUY&&!service.hasItem(player,offer.getProvider(),offer.getItemId(),offer.getAmount())){messages.send(player,"shop.no-item",tradeVars(holder,offer));SoundUtil.play(player,holder.getShop().getFailSound());return;}
-        holder.setTrading(true);service.trade(player,holder.getShop(),holder.getSnapshot(),offer,(status,overflow)->{holder.setTrading(false);String path;if(status==UsageResult.Status.SUCCESS)path=holder.getShop().getType()==ShopType.SELL?"shop.buy-success":"shop.sell-success";else if(status==UsageResult.Status.PERSONAL_LIMIT)path="shop.personal-limit";else if(status==UsageResult.Status.SERVER_LIMIT)path="shop.server-limit";else if(status==UsageResult.Status.STALE)path="shop.stale";else path="shop.transaction-failed";messages.send(player,path,tradeVars(holder,offer));SoundUtil.play(player,status==UsageResult.Status.SUCCESS?holder.getShop().getSuccessSound():holder.getShop().getFailSound());if(overflow)messages.send(player,"shop.overflow",tradeVars(holder,offer));if(player.getOpenInventory().getTopInventory().getHolder()==holder)render(player,holder);});
+        holder.setTrading(true);service.trade(player,holder.getShop(),holder.getSnapshot(),offer,(result,overflow)->{holder.setTrading(false);UsageResult.Status status=result.getStatus();String path;if(status==UsageResult.Status.SUCCESS)path=holder.getShop().getType()==ShopType.SELL?"shop.buy-success":"shop.sell-success";else if(status==UsageResult.Status.PERSONAL_LIMIT)path="shop.personal-limit";else if(status==UsageResult.Status.SERVER_LIMIT)path="shop.server-limit";else if(status==UsageResult.Status.STALE)path="shop.stale";else path="shop.transaction-failed";messages.send(player,path,tradeVars(holder,offer));SoundUtil.play(player,status==UsageResult.Status.SUCCESS?holder.getShop().getSuccessSound():holder.getShop().getFailSound());if(overflow)messages.send(player,"shop.overflow",tradeVars(holder,offer));if(status==UsageResult.Status.SUCCESS||status==UsageResult.Status.PERSONAL_LIMIT||status==UsageResult.Status.SERVER_LIMIT)syncOpenViews(player,holder,offer,result);});
+    }
+
+    private void refreshOpenServerShops() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!(player.getOpenInventory().getTopInventory().getHolder() instanceof ShopHolder)) continue;
+            ShopHolder holder = (ShopHolder) player.getOpenInventory().getTopInventory().getHolder();
+            if (holder.isCatalog() || holder.getShop().getScene() != ShopScene.SERVER || holder.isUsageRefreshing()) continue;
+            holder.setUsageRefreshing(true);
+            service.usageBatch(holder.getSnapshot(), player).whenComplete((usage, error) -> Bukkit.getScheduler().runTask(plugin, () -> {
+                holder.setUsageRefreshing(false);
+                if (error == null && player.getOpenInventory().getTopInventory().getHolder() == holder) {
+                    if (holder.replaceUsage(usage)) refreshVisibleOffers(player, holder);
+                }
+            }));
+        }
+    }
+
+    private void syncOpenViews(Player buyer, ShopHolder source, Offer offer, UsageResult result) {
+        for (Player viewer : Bukkit.getOnlinePlayers()) {
+            if (!(viewer.getOpenInventory().getTopInventory().getHolder() instanceof ShopHolder)) continue;
+            ShopHolder holder = (ShopHolder) viewer.getOpenInventory().getTopInventory().getHolder();
+            if (holder.isCatalog() || !holder.getShop().getId().equals(source.getShop().getId()) || !holder.getSnapshot().getCycleId().equals(source.getSnapshot().getCycleId())) continue;
+            int personal = viewer.getUniqueId().equals(buyer.getUniqueId()) ? result.getPersonalUsed() : holder.getUsage(offer.getIndex())[0];
+            holder.putUsage(offer.getIndex(), personal, result.getServerUsed());
+            refreshOffer(viewer, holder, offer.getIndex());
+        }
+    }
+
+    private void refreshOffer(Player player, ShopHolder holder, int offerIndex) {
+        List<?> entries = sorted(holder);
+        int entryPosition = -1;
+        for (int i = 0; i < entries.size(); i++) if (((Offer) entries.get(i)).getIndex() == offerIndex) { entryPosition = i; break; }
+        int perPage = holder.getShop().getProductSlotsPerPage();
+        int pageOffset = entryPosition - holder.getPage() * perPage;
+        if (entryPosition < 0 || pageOffset < 0 || pageOffset >= perPage) return;
+        int productSlot = 0;
+        List<String> layout = holder.getShop().getLayout();
+        for (int row = 0; row < layout.size(); row++) for (int col = 0; col < 9; col++) {
+            IconConfig icon = holder.getShop().getIcons().get(layout.get(row).charAt(col));
+            if (icon != null && icon.getType() == IconType.SHOPS && productSlot++ == pageOffset) {
+                Offer offer = (Offer) entries.get(entryPosition);
+                holder.getInventory().setItem(row * 9 + col, offerItem(player, holder, offer, holder.getUsage(offerIndex)));
+                return;
+            }
+        }
+    }
+
+    private void refreshVisibleOffers(Player player, ShopHolder holder) {
+        List<?> entries = sorted(holder);
+        int entryOffset = holder.getPage() * holder.getShop().getProductSlotsPerPage();
+        int productSlot = 0;
+        List<String> layout = holder.getShop().getLayout();
+        for (int row = 0; row < layout.size(); row++) for (int col = 0; col < 9; col++) {
+            IconConfig icon = holder.getShop().getIcons().get(layout.get(row).charAt(col));
+            if (icon == null || icon.getType() != IconType.SHOPS) continue;
+            int index = entryOffset + productSlot++;
+            if (index < entries.size()) {
+                Offer offer = (Offer) entries.get(index);
+                holder.getInventory().setItem(row * 9 + col, offerItem(player, holder, offer, holder.getUsage(offer.getIndex())));
+            }
+        }
     }
 
     private Map<String,String> tradeVars(ShopHolder holder,Offer offer){Map<String,String> vars=new HashMap<>();vars.put("shop",holder.getShop().getId());vars.put("item",offer.getItemId());vars.put("item_id",offer.getItemId());vars.put("amount",Integer.toString(offer.getAmount()));vars.put("money",offer.getMoney().toPlainString());vars.put("totalMoney",offer.getTotalMoney().toPlainString());return vars;}

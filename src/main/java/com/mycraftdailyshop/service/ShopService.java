@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 
 public final class ShopService implements AutoCloseable {
-    public interface TradeCallback { void complete(UsageResult.Status status, boolean overflow); }
+    public interface TradeCallback { void complete(UsageResult result, boolean overflow); }
 
     private final JavaPlugin plugin;
     private final ShopRegistry registry;
@@ -68,21 +68,21 @@ public final class ShopService implements AutoCloseable {
         return result;
     }
 
-    public CompletableFuture<int[]> usage(Offer offer, Player player) {
+    public CompletableFuture<Map<Integer, int[]>> usageBatch(ShopSnapshot snapshot, Player player) {
         String playerUuid = player.getUniqueId().toString();
         return CompletableFuture.supplyAsync(() -> {
-            try { return database.getUsage(offer, playerUuid); }
+            try { return database.getUsage(snapshot.getCycleId(), playerUuid); }
             catch (SQLException ex) { throw new CompletionException(ex); }
         }, executor);
     }
 
     public void trade(Player player, ShopConfig shop, ShopSnapshot snapshot, Offer offer, TradeCallback callback) {
         RefreshCycle current = registry.getRefreshCalculator().current(shop, System.currentTimeMillis());
-        if (!current.getKey().equals(snapshot.getCycleKey())) { callback.complete(UsageResult.Status.STALE, false); return; }
+        if (!current.getKey().equals(snapshot.getCycleKey())) { callback.complete(new UsageResult(UsageResult.Status.STALE, 0, 0), false); return; }
         ItemProvider provider = providers.get(offer.getProvider());
-        if (provider == null || !provider.exists(offer.getItemId())) { callback.complete(UsageResult.Status.ERROR, false); return; }
-        if (shop.getType() == ShopType.SELL && !economy.has(player, offer.getTotalMoney())) { callback.complete(UsageResult.Status.ERROR, false); return; }
-        if (shop.getType() == ShopType.BUY && !provider.has(player, offer.getItemId(), offer.getAmount())) { callback.complete(UsageResult.Status.ERROR, false); return; }
+        if (provider == null || !provider.exists(offer.getItemId())) { callback.complete(new UsageResult(UsageResult.Status.ERROR, 0, 0), false); return; }
+        if (shop.getType() == ShopType.SELL && !economy.has(player, offer.getTotalMoney())) { callback.complete(new UsageResult(UsageResult.Status.ERROR, 0, 0), false); return; }
+        if (shop.getType() == ShopType.BUY && !provider.has(player, offer.getItemId(), offer.getAmount())) { callback.complete(new UsageResult(UsageResult.Status.ERROR, 0, 0), false); return; }
 
         String playerUuid = player.getUniqueId().toString();
         String playerName = player.getName();
@@ -90,19 +90,19 @@ public final class ShopService implements AutoCloseable {
             try { return database.reserve(offer, playerUuid); }
             catch (SQLException ex) { throw new CompletionException(ex); }
         }, executor).whenComplete((reservation, error) -> Bukkit.getScheduler().runTask(plugin, () -> {
-            if (error != null) { log(error); callback.complete(UsageResult.Status.ERROR, false); return; }
-            if (reservation.getStatus() != UsageResult.Status.SUCCESS) { callback.complete(reservation.getStatus(), false); return; }
+            if (error != null) { log(error); callback.complete(new UsageResult(UsageResult.Status.ERROR, 0, 0), false); return; }
+            if (reservation.getStatus() != UsageResult.Status.SUCCESS) { callback.complete(reservation, false); return; }
             TradeExecution execution = executeMainThread(player, shop, offer, provider);
             if (!execution.success) {
                 CompletableFuture.runAsync(() -> { try { database.release(offer, playerUuid); } catch (SQLException ex) { log(ex); } }, executor);
-                callback.complete(UsageResult.Status.ERROR, execution.overflow);
+                callback.complete(new UsageResult(UsageResult.Status.ERROR, 0, 0), execution.overflow);
                 return;
             }
             CompletableFuture.runAsync(() -> {
                 try { database.record(playerUuid, playerName, shop.getId(), shop.getType().name(), offer); }
                 catch (SQLException ex) { log(ex); }
             }, executor);
-            callback.complete(UsageResult.Status.SUCCESS, execution.overflow);
+            callback.complete(reservation, execution.overflow);
         }));
     }
 

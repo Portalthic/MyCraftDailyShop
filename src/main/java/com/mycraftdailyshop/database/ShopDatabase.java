@@ -11,7 +11,9 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public final class ShopDatabase implements AutoCloseable {
@@ -129,14 +131,16 @@ public final class ShopDatabase implements AutoCloseable {
                         }
                     }
                 }
-                ensureUsage(connection, offer.getCycleId(), offer.getIndex(), playerUuid);
-                ensureUsage(connection, offer.getCycleId(), offer.getIndex(), "*");
-                int personal = usage(connection, offer.getCycleId(), offer.getIndex(), playerUuid, true);
-                int server = usage(connection, offer.getCycleId(), offer.getIndex(), "*", true);
+                boolean trackPersonal = offer.getPersonalLimit() > 0;
+                boolean trackServer = offer.getServerLimit() > 0;
+                if (trackPersonal) ensureUsage(connection, offer.getCycleId(), offer.getIndex(), playerUuid);
+                if (trackServer) ensureUsage(connection, offer.getCycleId(), offer.getIndex(), "*");
+                int personal = trackPersonal ? usage(connection, offer.getCycleId(), offer.getIndex(), playerUuid, true) : 0;
+                int server = trackServer ? usage(connection, offer.getCycleId(), offer.getIndex(), "*", true) : 0;
                 if (offer.getServerLimit() >= 0 && server >= offer.getServerLimit()) { connection.rollback(); return new UsageResult(UsageResult.Status.SERVER_LIMIT, personal, server); }
                 if (offer.getPersonalLimit() >= 0 && personal >= offer.getPersonalLimit()) { connection.rollback(); return new UsageResult(UsageResult.Status.PERSONAL_LIMIT, personal, server); }
-                updateUsage(connection, offer.getCycleId(), offer.getIndex(), playerUuid, 1);
-                updateUsage(connection, offer.getCycleId(), offer.getIndex(), "*", 1);
+                if (trackPersonal) updateUsage(connection, offer.getCycleId(), offer.getIndex(), playerUuid, 1);
+                if (trackServer) updateUsage(connection, offer.getCycleId(), offer.getIndex(), "*", 1);
                 connection.commit();
                 return new UsageResult(UsageResult.Status.SUCCESS, personal + 1, server + 1);
             } catch (SQLException ex) { connection.rollback(); throw ex; }
@@ -166,16 +170,28 @@ public final class ShopDatabase implements AutoCloseable {
     public void release(Offer offer, String playerUuid) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            updateUsage(connection, offer.getCycleId(), offer.getIndex(), playerUuid, -1);
-            updateUsage(connection, offer.getCycleId(), offer.getIndex(), "*", -1);
+            if (offer.getPersonalLimit() > 0) updateUsage(connection, offer.getCycleId(), offer.getIndex(), playerUuid, -1);
+            if (offer.getServerLimit() > 0) updateUsage(connection, offer.getCycleId(), offer.getIndex(), "*", -1);
             connection.commit();
         }
     }
 
-    public int[] getUsage(Offer offer, String playerUuid) throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-            return new int[]{usage(connection, offer.getCycleId(), offer.getIndex(), playerUuid, false), usage(connection, offer.getCycleId(), offer.getIndex(), "*", false)};
+    public Map<Integer, int[]> getUsage(String cycleId, String playerUuid) throws SQLException {
+        Map<Integer, int[]> result = new HashMap<>();
+        String sql = "SELECT offer_index,player_uuid,used FROM shop_usage WHERE cycle_id=? AND (player_uuid=? OR player_uuid='*')";
+        try (Connection connection = dataSource.getConnection(); PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, cycleId);
+            ps.setString(2, playerUuid);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int offerIndex = rs.getInt(1);
+                    int[] usage = result.computeIfAbsent(offerIndex, ignored -> new int[]{0, 0});
+                    if ("*".equals(rs.getString(2))) usage[1] = rs.getInt(3);
+                    else usage[0] = rs.getInt(3);
+                }
+            }
         }
+        return result;
     }
 
     public void record(String playerUuid, String playerName, String shopId, String type, Offer offer) throws SQLException {
@@ -258,6 +274,14 @@ public final class ShopDatabase implements AutoCloseable {
             }
         }
         if (historyDays >= 0) try(Connection c=dataSource.getConnection(); PreparedStatement ps=c.prepareStatement("DELETE FROM transaction_history WHERE traded_at<?")){ps.setLong(1,now-historyDays*86400000L);ps.executeUpdate();}
+    }
+
+    /** Removes wildcard counters belonging to offers without a finite server quota. */
+    public void cleanupUnusedServerUsage() throws SQLException {
+        try (Connection connection = dataSource.getConnection(); PreparedStatement ps = connection.prepareStatement(
+                "DELETE FROM shop_usage WHERE player_uuid='*' AND NOT EXISTS (SELECT 1 FROM shop_offer WHERE shop_offer.cycle_id=shop_usage.cycle_id AND shop_offer.offer_index=shop_usage.offer_index AND shop_offer.server_limit > 0)")) {
+            ps.executeUpdate();
+        }
     }
 
     @Override public void close() { if (dataSource != null) dataSource.close(); }

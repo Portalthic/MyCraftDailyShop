@@ -5,6 +5,10 @@ import com.mycraftdailyshop.model.ShopSnapshot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Arrays;
+
 public final class ShopHolder implements InventoryHolder {
     private final ShopConfig shop;
     private final ShopSnapshot snapshot;
@@ -14,7 +18,8 @@ public final class ShopHolder implements InventoryHolder {
     private SortMode sort = SortMode.INDEX;
     private boolean descending;
     private boolean trading;
-    private long renderVersion;
+    private boolean usageRefreshing;
+    private final Map<Integer, int[]> usage = new HashMap<>();
 
     public ShopHolder(ShopConfig shop, ShopSnapshot snapshot, boolean catalog) {
         this.shop = shop; this.snapshot = snapshot; this.catalog = catalog;
@@ -32,6 +37,17 @@ public final class ShopHolder implements InventoryHolder {
     public void toggleDescending() { descending = !descending; }
     public boolean isTrading() { return trading; }
     public void setTrading(boolean trading) { this.trading = trading; }
-    public long nextRenderVersion() { return ++renderVersion; }
-    public long getRenderVersion() { return renderVersion; }
+    public boolean isUsageRefreshing() { return usageRefreshing; }
+    public void setUsageRefreshing(boolean usageRefreshing) { this.usageRefreshing = usageRefreshing; }
+    public int[] getUsage(int offerIndex) { return usage.getOrDefault(offerIndex, new int[]{0, 0}); }
+    public void putUsage(int offerIndex, int personal, int server) { usage.put(offerIndex, new int[]{personal, server}); }
+    public void putAllUsage(Map<Integer, int[]> values) { usage.putAll(values); }
+    public boolean replaceUsage(Map<Integer, int[]> values) {
+        boolean changed = usage.size() != values.size();
+        if (!changed) for (Map.Entry<Integer, int[]> entry : values.entrySet()) {
+            if (!Arrays.equals(usage.get(entry.getKey()), entry.getValue())) { changed = true; break; }
+        }
+        if (changed) { usage.clear(); usage.putAll(values); }
+        return changed;
+    }
 }

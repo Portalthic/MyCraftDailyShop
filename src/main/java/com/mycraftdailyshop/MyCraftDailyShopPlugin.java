@@ -27,6 +27,7 @@ public final class MyCraftDailyShopPlugin extends JavaPlugin {
             MessageService messages=new MessageService(this);messages.load();
             ShopRegistry registry=new ShopRegistry(this);int loaded=registry.load();
             database=new ShopDatabase(this);database.open();
+            database.cleanupUnusedServerUsage();
             EconomyService economy=new EconomyService(this);
             ZaphkielItemProvider zaphkiel=new ZaphkielItemProvider();
             shopService=new ShopService(this,registry,database,economy,Collections.singletonList(zaphkiel));
