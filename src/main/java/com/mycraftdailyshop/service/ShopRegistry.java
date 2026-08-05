@@ -102,7 +102,7 @@ public final class ShopRegistry {
             if (amount.getMin().compareTo(java.math.BigDecimal.ONE) < 0) throw new IllegalArgumentException("商品 " + index + " 的 amount 最小值必须至少为 1");
             validateLimit(personalLimit, "商品 " + index + " 的 limit_personal");
             validateLimit(serverLimit, "商品 " + index + " 的 limit_server");
-            products.add(new ProductConfig(index, required(section, "id"), money, amount, personalLimit, serverLimit, section.getDouble("chance", 1D)));
+            products.add(new ProductConfig(index, required(section, "id"), money, amount, personalLimit, serverLimit, section.getDouble("chance", 1D), parseEnchantments(section, index)));
         }
         products.sort(Comparator.comparingInt(ProductConfig::getIndex));
         ShopConfig shop = new ShopConfig(id, type, scene, refreshType, refreshTime,
@@ -114,6 +114,50 @@ public final class ShopRegistry {
         if (shop.getProductSlotsPerPage() < 1) throw new IllegalArgumentException("layout 中没有 shops 类型的商品槽");
         return shop;
     }
+
+    private List<EnchantmentGroupConfig> parseEnchantments(ConfigurationSection product, int index) {
+        List<EnchantmentGroupConfig> groups = new ArrayList<>();
+        for (Object raw : product.getList("enchantments", Collections.emptyList())) {
+            if (!(raw instanceof Map)) throw new IllegalArgumentException("商品 " + index + " 的 enchantments 元素必须是对象");
+            Map<?, ?> group = (Map<?, ?>) raw;
+            double chance = number(group.get("chance"), 1D, "商品 " + index + " 的附魔 chance");
+            if (!finite(chance) || chance < 0 || chance > 1) throw new IllegalArgumentException("商品 " + index + " 的附魔 chance 必须在 0 到 1 之间");
+            Object choicesValue = group.get("enchant");
+            if (!(choicesValue instanceof List) || ((List<?>) choicesValue).isEmpty()) throw new IllegalArgumentException("商品 " + index + " 的附魔组不能为空");
+            List<EnchantmentChoiceConfig> choices = new ArrayList<>();
+            for (Object rawChoice : (List<?>) choicesValue) {
+                if (!(rawChoice instanceof Map)) throw new IllegalArgumentException("商品 " + index + " 的附魔选择格式错误");
+                Map<?, ?> choice = (Map<?, ?>) rawChoice;
+                String id = String.valueOf(choice.get("id")).toUpperCase(Locale.ROOT);
+                if (org.bukkit.enchantments.Enchantment.getByName(id) == null) throw new IllegalArgumentException("商品 " + index + " 使用了无效附魔: " + id);
+                double weight = number(choice.get("weight"), 1D, "商品 " + index + " 的附魔权重");
+                if (!finite(weight) || weight <= 0) throw new IllegalArgumentException("商品 " + index + " 的附魔权重必须大于 0");
+                List<EnchantmentLevelConfig> levels = new ArrayList<>(); Object levelValue = choice.get("level_list");
+                if (levelValue instanceof List) for (Object rawLevel : (List<?>) levelValue) {
+                    if (!(rawLevel instanceof Map)) throw new IllegalArgumentException("商品 " + index + " 的附魔等级格式错误");
+                    Map<?, ?> level = (Map<?, ?>) rawLevel;
+                    int value = integer(level.get("level"), 1, "商品 " + index + " 的附魔等级");
+                    double levelWeight = number(level.get("weight"), 1D, "商品 " + index + " 的附魔等级权重");
+                    if (value < 1 || !finite(levelWeight) || levelWeight <= 0) throw new IllegalArgumentException("商品 " + index + " 的附魔等级或权重无效");
+                    Object premium = level.get("premium");
+                    ValueSpec premiumSpec = ValueSpec.parse(premium == null ? "0" : String.valueOf(premium));
+                    if (premiumSpec.getMin().signum() < 0) throw new IllegalArgumentException("商品 " + index + " 的附魔溢价不能为负数");
+                    levels.add(new EnchantmentLevelConfig(value, levelWeight, premiumSpec));
+                }
+                if (levels.isEmpty()) levels.add(new EnchantmentLevelConfig(1, 1D, ValueSpec.parse("0")));
+                Set<Integer> levelIds = new HashSet<>(); for (EnchantmentLevelConfig level : levels) if (!levelIds.add(level.getLevel())) throw new IllegalArgumentException("商品 " + index + " 的附魔 " + id + " 存在重复等级: " + level.getLevel());
+                choices.add(new EnchantmentChoiceConfig(id, weight, levels));
+            }
+            Set<String> ids = new HashSet<>(); for (EnchantmentChoiceConfig choice : choices) if (!ids.add(choice.getId())) throw new IllegalArgumentException("商品 " + index + " 的同一附魔组存在重复附魔: " + choice.getId());
+            groups.add(new EnchantmentGroupConfig(chance, choices));
+        }
+        Set<String> ids = new HashSet<>(); for (EnchantmentGroupConfig group : groups) for (EnchantmentChoiceConfig choice : group.getChoices()) if (!ids.add(choice.getId())) throw new IllegalArgumentException("商品 " + index + " 的附魔在多个附魔组中重复: " + choice.getId());
+        return groups;
+    }
+
+    private double number(Object value, double fallback, String path) { try { return value == null ? fallback : Double.parseDouble(String.valueOf(value)); } catch (NumberFormatException ex) { throw new IllegalArgumentException(path + " 必须是数字"); } }
+    private int integer(Object value, int fallback, String path) { try { return value == null ? fallback : Integer.parseInt(String.valueOf(value)); } catch (NumberFormatException ex) { throw new IllegalArgumentException(path + " 必须是整数"); } }
+    private boolean finite(double value) { return !Double.isNaN(value) && !Double.isInfinite(value); }
 
     private String required(ConfigurationSection section, String path) {
         String value = section == null ? null : section.getString(path);

@@ -32,4 +32,18 @@ class ValueSpecTest {
     @Test void rejectsReversedRange() {
         assertThrows(IllegalArgumentException.class, () -> ValueSpec.parse("800-200"));
     }
+
+    @Test void samplesHalfNormalExpressionsInsideBounds() {
+        ValueSpec left = ValueSpec.parse("NL:300-500");
+        ValueSpec right = ValueSpec.parse("NR:300-500");
+        Random random = new Random(11);
+        BigDecimal leftTotal = BigDecimal.ZERO, rightTotal = BigDecimal.ZERO;
+        for (int i = 0; i < 2000; i++) {
+            BigDecimal l = left.sampleDecimal(random), r = right.sampleDecimal(random);
+            assertTrue(l.compareTo(new BigDecimal("300")) >= 0 && l.compareTo(new BigDecimal("500")) <= 0);
+            assertTrue(r.compareTo(new BigDecimal("300")) >= 0 && r.compareTo(new BigDecimal("500")) <= 0);
+            leftTotal = leftTotal.add(l); rightTotal = rightTotal.add(r);
+        }
+        assertTrue(leftTotal.compareTo(rightTotal) > 0);
+    }
 }

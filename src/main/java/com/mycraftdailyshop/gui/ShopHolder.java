@@ -19,6 +19,7 @@ public final class ShopHolder implements InventoryHolder {
     private boolean descending;
     private boolean trading;
     private boolean usageRefreshing;
+    private boolean snapshotRefreshing;
     private final Map<Integer, int[]> usage = new HashMap<>();
 
     public ShopHolder(ShopConfig shop, ShopSnapshot snapshot, boolean catalog) {
@@ -35,10 +36,13 @@ public final class ShopHolder implements InventoryHolder {
     public void nextSort() { sort = sort.next(); }
     public boolean isDescending() { return descending; }
     public void toggleDescending() { descending = !descending; }
+    public void copyViewStateFrom(ShopHolder other) { page = other.page; sort = other.sort; descending = other.descending; }
     public boolean isTrading() { return trading; }
     public void setTrading(boolean trading) { this.trading = trading; }
     public boolean isUsageRefreshing() { return usageRefreshing; }
     public void setUsageRefreshing(boolean usageRefreshing) { this.usageRefreshing = usageRefreshing; }
+    public boolean isSnapshotRefreshing() { return snapshotRefreshing; }
+    public void setSnapshotRefreshing(boolean snapshotRefreshing) { this.snapshotRefreshing = snapshotRefreshing; }
     public int[] getUsage(int offerIndex) { return usage.getOrDefault(offerIndex, new int[]{0, 0}); }
     public void putUsage(int offerIndex, int personal, int server) { usage.put(offerIndex, new int[]{personal, server}); }
     public void putAllUsage(Map<Integer, int[]> values) { usage.putAll(values); }

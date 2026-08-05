@@ -20,6 +20,14 @@ command:
     - '&6/mds validate &7- 检查商店配置'
 
 shop:
+  sort:
+    index: '索引'
+    chance: '概率'
+    money: '价格'
+    amount: '数量'
+  order:
+    ascending: '升序'
+    descending: '降序'
   loading: '[prefix]&7正在读取商店，请稍候。'
   stale: '[prefix]&c商店已经刷新，请重新打开。'
   cooldown: '[prefix]&c操作太快了，请稍后再试。'
@@ -36,6 +44,7 @@ shop:
 lore:
   sell-catalog:
     - ''
+    - '[enchantments]'
     - '&a单价范围：&6[minMoney] &a- &6[maxMoney]'
     - '&a数量范围：&e[minAmount] &a- &e[maxAmount]'
     - '&a个人限购范围：&c[personalLimit]'
@@ -43,6 +52,7 @@ lore:
     - '&a出现概率：&e[chance]%'
   buy-catalog:
     - ''
+    - '[enchantments]'
     - '&a收购单价范围：&6[minMoney] &a- &6[maxMoney]'
     - '&a每次收购数量：&e[minAmount] &a- &e[maxAmount]'
     - '&a个人限售范围：&c[personalLimit]'
@@ -51,6 +61,7 @@ lore:
   sell-offer:
     - ''
     - '&a单价：&6[money]'
+    - '&a溢价：&r[premium]'
     - '&a本次获得：&e[amount] &a个'
     - '&a本次总价：&6[totalMoney]'
     - '&a个人剩余次数：&c[number]'
@@ -58,7 +69,81 @@ lore:
   buy-offer:
     - ''
     - '&a收购单价：&6[money]'
+    - '&a溢价：&r[premium]'
     - '&a本次需要：&e[amount] &a个'
     - '&a本次总价：&6[totalMoney]'
     - '&a个人剩余次数：&c[number]'
     - '&a全服剩余次数：&c[allNumber]'
+  sell-catalog-personal:
+    - ''
+    - '[enchantments]'
+    - '&a单价范围：&6[minMoney] &a- &6[maxMoney]'
+    - '&a数量范围：&e[minAmount] &a- &e[maxAmount]'
+    - '&a个人限购范围：&c[personalLimit]'
+    - '&a出现概率：&e[chance]%'
+  buy-catalog-personal:
+    - ''
+    - '[enchantments]'
+    - '&a收购单价范围：&6[minMoney] &a- &6[maxMoney]'
+    - '&a每次收购数量：&e[minAmount] &a- &e[maxAmount]'
+    - '&a个人限售范围：&c[personalLimit]'
+    - '&a出现概率：&e[chance]%'
+  sell-offer-personal:
+    - ''
+    - '&a单价：&6[money]'
+    - '&a溢价：&r[premium]'
+    - '&a本次获得：&e[amount] &a个'
+    - '&a本次总价：&6[totalMoney]'
+    - '&a个人剩余次数：&c[number]'
+  buy-offer-personal:
+    - ''
+    - '&a收购单价：&6[money]'
+    - '&a溢价：&r[premium]'
+    - '&a本次需要：&e[amount] &a个'
+    - '&a本次总价：&6[totalMoney]'
+    - '&a个人剩余次数：&c[number]'
+
+enchantments:
+  preLore:
+    - '可能的附魔：'
+    # [enchantmentList] 会根据配置，展示多行附魔数据
+    - '[enchantmentDisplay]'
+    - ''
+  # 单组附魔展示样式
+  # [enchantmentGroupDisplay] 附魔组样式，由附魔名和分隔符组成
+  enchantment:
+    - '- [enchantmentGroupDisplay] [minLevel]-[maxLevel] | 概率 [enchantmentChance] | 溢价 [minPremium]-[maxPremium]'
+  # enchantmentGroupDisplay 的分隔符
+  enchantmentSplit: '/'
+  # 附魔汉化；未配置的附魔会显示 Bukkit 枚举名。
+  enchantmentName:
+    PROTECTION_ENVIRONMENTAL: '保护'
+    PROTECTION_FIRE: '火焰保护'
+    PROTECTION_FALL: '摔落保护'
+    PROTECTION_EXPLOSIONS: '爆炸保护'
+    PROTECTION_PROJECTILE: '弹射物保护'
+    OXYGEN: '水下呼吸'
+    WATER_WORKER: '水下速掘'
+    THORNS: '荆棘'
+    DEPTH_STRIDER: '深海探索者'
+    FROST_WALKER: '冰霜行者'
+    BINDING_CURSE: '绑定诅咒'
+    DAMAGE_ALL: '锋利'
+    DAMAGE_UNDEAD: '亡灵杀手'
+    DAMAGE_ARTHROPODS: '节肢杀手'
+    KNOCKBACK: '击退'
+    FIRE_ASPECT: '火焰附加'
+    LOOT_BONUS_MOBS: '抢夺'
+    SWEEPING_EDGE: '横扫之刃'
+    DIG_SPEED: '效率'
+    SILK_TOUCH: '精准采集'
+    DURABILITY: '耐久'
+    LOOT_BONUS_BLOCKS: '时运'
+    ARROW_DAMAGE: '力量'
+    ARROW_KNOCKBACK: '冲击'
+    ARROW_FIRE: '火矢'
+    ARROW_INFINITE: '无限'
+    LUCK: '海之眷顾'
+    LURE: '饵钓'
+    MENDING: '经验修补'
+    VANISHING_CURSE: '消失诅咒'

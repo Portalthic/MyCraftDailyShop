@@ -52,20 +52,43 @@ public final class ShopService implements AutoCloseable {
         }, executor);
     }
 
+    public boolean isCurrent(ShopConfig shop, ShopSnapshot snapshot) {
+        return snapshot != null && registry.getRefreshCalculator().current(shop, System.currentTimeMillis()).getKey().equals(snapshot.getCycleKey());
+    }
+
     private List<Offer> generate(ShopConfig shop) {
         List<Offer> result = new ArrayList<>();
         synchronized (random) {
             for (ProductConfig product : shop.getProducts()) {
                 if (random.nextDouble() > product.getChance()) continue;
                 int amount = Math.max(1, product.getAmount().sampleInteger(random, false));
-                BigDecimal unit = product.getMoney().sampleMoney(random);
-                BigDecimal total = unit.multiply(BigDecimal.valueOf(amount)).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal base = product.getMoney().sampleMoney(random);
+                List<EnchantmentRoll> rolls = new ArrayList<>();
+                for (EnchantmentGroupConfig group : product.getEnchantments()) {
+                    if (random.nextDouble() >= group.getChance()) continue;
+                    EnchantmentChoiceConfig choice = weighted(group.getChoices(), random);
+                    EnchantmentLevelConfig level = weighted(choice.getLevels(), random);
+                    BigDecimal premium = level.getPremium().sampleDecimal(random).max(BigDecimal.ZERO);
+                    rolls.add(new EnchantmentRoll(choice.getId(), level.getLevel(), premium));
+                }
+                BigDecimal multiplier = BigDecimal.ONE;
+                for (EnchantmentRoll roll : rolls) multiplier = multiplier.multiply(BigDecimal.ONE.add(roll.getPremium()));
+                BigDecimal unit = base.multiply(multiplier).setScale(2, RoundingMode.DOWN);
+                BigDecimal total = unit.multiply(BigDecimal.valueOf(amount)).setScale(2, RoundingMode.DOWN);
                 int personal = product.getPersonalLimit().sampleInteger(random, true);
                 int server = shop.getScene() == ShopScene.SERVER ? product.getServerLimit().sampleInteger(random, true) : -1;
-                result.add(new Offer(null, product.getIndex(), product.getProvider(), product.getItemId(), unit, total, amount, personal, server, product.getChance()));
+                BigDecimal totalPremium = multiplier.subtract(BigDecimal.ONE);
+                result.add(new Offer(null, product.getIndex(), product.getProvider(), product.getItemId(), unit, total, amount, personal, server, product.getChance(), base, totalPremium, rolls));
             }
         }
         return result;
+    }
+
+    private <T> T weighted(List<T> values, Random random) {
+        double total = 0; for (T value : values) total += value instanceof EnchantmentChoiceConfig ? ((EnchantmentChoiceConfig) value).getWeight() : ((EnchantmentLevelConfig) value).getWeight();
+        double cursor = random.nextDouble() * total;
+        for (T value : values) { cursor -= value instanceof EnchantmentChoiceConfig ? ((EnchantmentChoiceConfig) value).getWeight() : ((EnchantmentLevelConfig) value).getWeight(); if (cursor < 0) return value; }
+        return values.get(values.size() - 1);
     }
 
     public CompletableFuture<Map<Integer, int[]>> usageBatch(ShopSnapshot snapshot, Player player) {
@@ -92,6 +115,13 @@ public final class ShopService implements AutoCloseable {
         }, executor).whenComplete((reservation, error) -> Bukkit.getScheduler().runTask(plugin, () -> {
             if (error != null) { log(error); callback.complete(new UsageResult(UsageResult.Status.ERROR, 0, 0), false); return; }
             if (reservation.getStatus() != UsageResult.Status.SUCCESS) { callback.complete(reservation, false); return; }
+            if (!isCurrent(shop, snapshot)) {
+                CompletableFuture.runAsync(() -> {
+                    try { database.release(offer, playerUuid); } catch (SQLException ex) { log(ex); }
+                }, executor);
+                callback.complete(new UsageResult(UsageResult.Status.STALE, 0, 0), false);
+                return;
+            }
             TradeExecution execution = executeMainThread(player, shop, offer, provider);
             if (!execution.success) {
                 CompletableFuture.runAsync(() -> { try { database.release(offer, playerUuid); } catch (SQLException ex) { log(ex); } }, executor);
@@ -111,24 +141,24 @@ public final class ShopService implements AutoCloseable {
         if (shop.getType() == ShopType.SELL) {
             if (!economy.has(player, offer.getTotalMoney()) || !economy.withdraw(player, offer.getTotalMoney())) return new TradeExecution(false, false);
             try {
-                return new TradeExecution(true, giveOrDrop(player, provider, offer.getItemId(), offer.getAmount()));
+                return new TradeExecution(true, giveOrDrop(player, provider, offer));
             } catch (RuntimeException ex) {
                 economy.deposit(player, offer.getTotalMoney()); log(ex); return new TradeExecution(false, false);
             }
         }
         if (!provider.has(player, offer.getItemId(), offer.getAmount()) || !provider.take(player, offer.getItemId(), offer.getAmount())) return new TradeExecution(false, false);
         if (economy.deposit(player, offer.getTotalMoney())) return new TradeExecution(true, false);
-        boolean overflow = giveOrDrop(player, provider, offer.getItemId(), offer.getAmount());
+        boolean overflow = giveOrDrop(player, provider, offer);
         return new TradeExecution(false, overflow);
     }
 
-    private boolean giveOrDrop(Player player, ItemProvider provider, String itemId, int amount) {
-        int remaining = amount;
+    private boolean giveOrDrop(Player player, ItemProvider provider, Offer offer) {
+        int remaining = offer.getAmount();
         boolean dropped = false;
         while (remaining > 0) {
             int batch = Math.min(remaining, 64);
-            ItemStack item = provider.create(player, itemId, batch);
-            if (item == null) throw new IllegalStateException("物品不存在: " + itemId);
+            ItemStack item = provider.create(player, offer.getItemId(), batch, offer.getEnchantments());
+            if (item == null) throw new IllegalStateException("物品不存在: " + offer.getItemId());
             item.setAmount(Math.min(batch, item.getMaxStackSize()));
             remaining -= item.getAmount();
             for (ItemStack overflow : player.getInventory().addItem(item).values()) { player.getWorld().dropItemNaturally(player.getLocation(), overflow); dropped = true; }
@@ -153,6 +183,7 @@ public final class ShopService implements AutoCloseable {
         ItemProvider provider = providers.get(providerName);
         return provider == null ? null : provider.create(player, itemId, 1);
     }
+    public ItemStack createOfferDisplay(Player player, Offer offer) { ItemProvider provider = providers.get(offer.getProvider()); return provider == null ? null : provider.create(player, offer.getItemId(), 1, offer.getEnchantments()); }
     public boolean hasMoney(Player player, BigDecimal amount) { return economy.has(player, amount); }
     public boolean hasItem(Player player, String providerName, String itemId, int amount) {
         ItemProvider provider = providers.get(providerName);

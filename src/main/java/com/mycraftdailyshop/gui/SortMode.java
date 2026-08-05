@@ -1,9 +1,9 @@
 package com.mycraftdailyshop.gui;
 
 public enum SortMode {
-    INDEX("索引"), CHANCE("概率"), MONEY("价格"), AMOUNT("数量");
-    private final String display;
-    SortMode(String display) { this.display = display; }
-    public String getDisplay() { return display; }
+    INDEX("index"), CHANCE("chance"), MONEY("money"), AMOUNT("amount");
+    private final String key;
+    SortMode(String key) { this.key = key; }
+    public String getKey() { return key; }
     public SortMode next() { return values()[(ordinal() + 1) % values().length]; }
 }

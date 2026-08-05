@@ -8,6 +8,9 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -27,6 +30,10 @@ public final class MessageService {
 
     public void load() {
         messages = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "message.yml"));
+        InputStream resource = plugin.getResource("message.yml");
+        if (resource != null) try (InputStreamReader reader = new InputStreamReader(resource, StandardCharsets.UTF_8)) {
+            messages.setDefaults(YamlConfiguration.loadConfiguration(reader));
+        } catch (java.io.IOException ignored) { }
     }
 
     public void send(CommandSender sender, String path, Map<String, String> variables) {
@@ -35,9 +42,23 @@ public final class MessageService {
     }
 
     public List<String> list(Player player, String path, Map<String, String> variables) {
+        return list(player, path, null, variables);
+    }
+
+    public List<String> list(Player player, String path, String fallbackPath, Map<String, String> variables) {
+        List<String> raw = messages.getStringList(path);
+        if (raw.isEmpty() && fallbackPath != null) {
+            raw = new ArrayList<>(messages.getStringList(fallbackPath));
+            raw.removeIf(line -> line.contains("[serverLimit]") || line.contains("[allNumber]"));
+        }
         List<String> result = new ArrayList<>();
-        for (String line : messages.getStringList(path)) result.add(format(player, line, variables));
+        for (String line : raw) result.add(format(player, line, variables));
         return result;
+    }
+
+    public String text(Player player, String path, String fallback) {
+        String value = messages.getString(path);
+        return format(player, value == null || value.isEmpty() ? fallback : value, Collections.emptyMap());
     }
 
     public String format(Player player, String input, Map<String, String> variables) {

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.mycraftdailyshop'
-version = '1.0.4'
+version = '1.1.0'
 
 repositories {
     mavenCentral()
@@ -41,6 +41,11 @@ shadowJar {
     archiveClassifier.set('')
     mergeServiceFiles()
     relocate 'com.zaxxer.hikari', 'com.mycraftdailyshop.lib.hikari'
+    // SQLite bundles native binaries for many operating systems. Keep Windows and Linux only.
+    exclude 'org/sqlite/native/Mac/**'
+    exclude 'org/sqlite/native/FreeBSD/**'
+    exclude 'org/sqlite/native/Linux-Android/**'
+    exclude 'org/sqlite/native/Linux-Musl/**'
 }
 
 build.dependsOn shadowJar

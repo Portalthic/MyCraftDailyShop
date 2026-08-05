@@ -5,14 +5,15 @@ import java.math.RoundingMode;
 import java.util.Random;
 
 public final class ValueSpec {
-    private final boolean normal;
+    private enum Distribution { UNIFORM, NORMAL, LEFT_NORMAL, RIGHT_NORMAL }
+    private final Distribution distribution;
     private final BigDecimal min;
     private final BigDecimal max;
     private final BigDecimal center;
     private final BigDecimal spread;
 
-    private ValueSpec(boolean normal, BigDecimal min, BigDecimal max, BigDecimal center, BigDecimal spread) {
-        this.normal = normal;
+    private ValueSpec(Distribution distribution, BigDecimal min, BigDecimal max, BigDecimal center, BigDecimal spread) {
+        this.distribution = distribution;
         this.min = min;
         this.max = max;
         this.center = center;
@@ -22,16 +23,18 @@ public final class ValueSpec {
     public static ValueSpec parse(String input) {
         if (input == null || input.trim().isEmpty()) throw new IllegalArgumentException("随机表达式不能为空");
         String value = input.trim().replace(" ", "");
-        boolean normal = false;
+        Distribution distribution = Distribution.UNIFORM;
         if (value.regionMatches(true, 0, "U:", 0, 2)) value = value.substring(2);
-        else if (value.regionMatches(true, 0, "N:", 0, 2)) { normal = true; value = value.substring(2); }
+        else if (value.regionMatches(true, 0, "N:", 0, 2)) { distribution = Distribution.NORMAL; value = value.substring(2); }
+        else if (value.regionMatches(true, 0, "NL:", 0, 3)) { distribution = Distribution.LEFT_NORMAL; value = value.substring(3); }
+        else if (value.regionMatches(true, 0, "NR:", 0, 3)) { distribution = Distribution.RIGHT_NORMAL; value = value.substring(3); }
         if (value.contains(",")) {
             String[] parts = value.split(",", -1);
             if (parts.length != 2) throw new IllegalArgumentException("中心值表达式格式错误: " + input);
             BigDecimal center = decimal(parts[0], input);
             BigDecimal spread = decimal(parts[1], input);
             if (spread.signum() < 0) throw new IllegalArgumentException("扩展区间不能小于 0: " + input);
-            return new ValueSpec(normal, center.subtract(spread), center.add(spread), center, spread);
+            return new ValueSpec(distribution, center.subtract(spread), center.add(spread), center, spread);
         }
         int dash = value.indexOf('-', 1);
         if (dash > 0) {
@@ -39,10 +42,10 @@ public final class ValueSpec {
             BigDecimal max = decimal(value.substring(dash + 1), input);
             if (min.compareTo(max) > 0) throw new IllegalArgumentException("最小值不能大于最大值: " + input);
             BigDecimal center = min.add(max).divide(BigDecimal.valueOf(2), 8, RoundingMode.HALF_UP);
-            return new ValueSpec(normal, min, max, center, max.subtract(min).divide(BigDecimal.valueOf(6), 8, RoundingMode.HALF_UP));
+            return new ValueSpec(distribution, min, max, center, max.subtract(min).divide(BigDecimal.valueOf(6), 8, RoundingMode.HALF_UP));
         }
         BigDecimal fixed = decimal(value, input);
-        return new ValueSpec(false, fixed, fixed, fixed, BigDecimal.ZERO);
+        return new ValueSpec(Distribution.UNIFORM, fixed, fixed, fixed, BigDecimal.ZERO);
     }
 
     private static BigDecimal decimal(String value, String source) {
@@ -51,24 +54,26 @@ public final class ValueSpec {
     }
 
     public BigDecimal sampleMoney(Random random) {
-        BigDecimal result = sample(random);
+        BigDecimal result = sampleDecimal(random);
         if (result.compareTo(new BigDecimal("0.01")) < 0) result = new BigDecimal("0.01");
         return result.setScale(2, RoundingMode.HALF_UP);
     }
 
     public int sampleInteger(Random random, boolean allowUnlimited) {
         if (allowUnlimited && min.compareTo(BigDecimal.valueOf(-1)) == 0 && max.compareTo(BigDecimal.valueOf(-1)) == 0) return -1;
-        int result = sample(random).setScale(0, RoundingMode.HALF_UP).intValue();
+        int result = sampleDecimal(random).setScale(0, RoundingMode.HALF_UP).intValue();
         if (result < 0) throw new IllegalArgumentException("随机结果不能为负数");
         return result;
     }
 
-    private BigDecimal sample(Random random) {
+    public BigDecimal sampleDecimal(Random random) {
         if (min.compareTo(max) == 0) return min;
         double result;
-        if (normal) {
+        if (distribution != Distribution.UNIFORM) {
             double sigma = spread.signum() == 0 ? max.subtract(min).doubleValue() / 6D : spread.doubleValue();
-            result = center.doubleValue() + random.nextGaussian() * sigma;
+            if (distribution == Distribution.LEFT_NORMAL) result = max.doubleValue() - Math.abs(random.nextGaussian()) * sigma;
+            else if (distribution == Distribution.RIGHT_NORMAL) result = min.doubleValue() + Math.abs(random.nextGaussian()) * sigma;
+            else result = center.doubleValue() + random.nextGaussian() * sigma;
             result = Math.max(min.doubleValue(), Math.min(max.doubleValue(), result));
         } else {
             result = min.doubleValue() + random.nextDouble() * max.subtract(min).doubleValue();
