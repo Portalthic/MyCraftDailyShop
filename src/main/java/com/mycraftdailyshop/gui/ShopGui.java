@@ -127,7 +127,7 @@ public final class ShopGui implements Listener {
     }
 
     private ItemStack catalogItem(Player player, ShopConfig shop, ProductConfig product) {
-        ItemStack base = service.createDisplay(player, product.getProvider(), product.getItemId());
+        ItemStack base = service.createDisplay(product.getProvider(), product.getItemId());
         if (base == null) base = missing(product.getProvider() + ":" + product.getItemId());
         Map<String, String> vars = new HashMap<>();
         vars.put("minMoney", product.getMoney().getMin().setScale(2, RoundingMode.HALF_UP).toPlainString());
@@ -144,7 +144,7 @@ public final class ShopGui implements Listener {
     }
 
     private ItemStack offerItem(Player player, ShopHolder holder, Offer offer, int[] usage) {
-        ItemStack base = service.createOfferDisplay(player, offer);
+        ItemStack base = service.createOfferDisplay(offer);
         if (base == null) base = missing(offer.getProvider() + ":" + offer.getItemId());
         int personalUsed = usage == null ? 0 : usage[0], serverUsed = usage == null ? 0 : usage[1];
         Map<String, String> vars = new HashMap<>();

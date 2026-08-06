@@ -10,6 +10,8 @@ public interface ItemProvider {
     boolean exists(String itemId);
     ItemStack create(Player player, String itemId, int amount);
     default ItemStack create(Player player, String itemId, int amount, List<EnchantmentRoll> enchantments) { return create(player, itemId, amount); }
+    default ItemStack createDisplay(String itemId, int amount) { return create(null, itemId, amount); }
+    default ItemStack createDisplay(String itemId, int amount, List<EnchantmentRoll> enchantments) { return create(null, itemId, amount, enchantments); }
     boolean has(Player player, String itemId, int amount);
     boolean take(Player player, String itemId, int amount);
 }

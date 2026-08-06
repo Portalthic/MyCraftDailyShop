@@ -1,6 +1,6 @@
 # MyCraftDailyShop
 
-适用于 Paper 1.12.2 的每日随机商店插件。插件版本为 `1.1.0`。
+适用于 Paper 1.12.2 的每日随机商店插件。插件版本为 `1.1.1`。
 
 ## 依赖
 
@@ -17,7 +17,7 @@ $env:JAVA_HOME='C:\Program Files\Java\jdk-1.8'
 .\gradlew.bat clean test shadowJar
 ```
 
-成品位于 `build/libs/MyCraftDailyShop-1.1.0.jar`。
+成品位于 `build/libs/MyCraftDailyShop-1.1.1.jar`。
 
 ## 配置
 

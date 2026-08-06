@@ -179,11 +179,11 @@ public final class ShopService implements AutoCloseable {
     public void remember(Player player) { remember(player.getUniqueId(), player.getName()); }
     public void remember(UUID uuid, String name) { if (uuid != null && name != null) CompletableFuture.runAsync(() -> { try { database.rememberPlayer(uuid.toString(), name); } catch (SQLException ex) { log(ex); } }, executor); }
     public boolean providerExists(ProductConfig product) { ItemProvider provider=providers.get(product.getProvider()); return provider != null && provider.exists(product.getItemId()); }
-    public ItemStack createDisplay(Player player, String providerName, String itemId) {
+    public ItemStack createDisplay(String providerName, String itemId) {
         ItemProvider provider = providers.get(providerName);
-        return provider == null ? null : provider.create(player, itemId, 1);
+        return provider == null ? null : provider.createDisplay(itemId, 1);
     }
-    public ItemStack createOfferDisplay(Player player, Offer offer) { ItemProvider provider = providers.get(offer.getProvider()); return provider == null ? null : provider.create(player, offer.getItemId(), 1, offer.getEnchantments()); }
+    public ItemStack createOfferDisplay(Offer offer) { ItemProvider provider = providers.get(offer.getProvider()); return provider == null ? null : provider.createDisplay(offer.getItemId(), 1, offer.getEnchantments()); }
     public boolean hasMoney(Player player, BigDecimal amount) { return economy.has(player, amount); }
     public boolean hasItem(Player player, String providerName, String itemId, int amount) {
         ItemProvider provider = providers.get(providerName);
