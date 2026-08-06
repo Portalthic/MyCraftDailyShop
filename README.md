@@ -1,6 +1,6 @@
 # MyCraftDailyShop
 
-适用于 Paper 1.12.2 的每日随机商店插件。插件版本为 `1.1.1`。
+适用于 Paper 1.12.2 的每日随机商店插件。插件版本为 `1.1.2`。
 
 ## 依赖
 
@@ -17,7 +17,7 @@ $env:JAVA_HOME='C:\Program Files\Java\jdk-1.8'
 .\gradlew.bat clean test shadowJar
 ```
 
-成品位于 `build/libs/MyCraftDailyShop-1.1.1.jar`。
+成品位于 `build/libs/MyCraftDailyShop-1.1.2.jar`。
 
 ## 配置
 
@@ -38,14 +38,16 @@ plugins/MyCraftDailyShop/
 
 ## 管理命令
 
+插件短命令为 `/mcds`（MyCraftDailyShop）。完整命令 `/mycraftdailyshop` 同样可用，旧短命令 `/mds` 已移除。
+
 ```text
-/mds open <玩家> <商店>
-/mds show <玩家> <商店>
-/mds quota reset player <玩家|*> <商店|*>
-/mds quota reset server <商店|*>
-/mds refresh <商店|*> [--player <玩家>]
-/mds reload
-/mds validate
+/mcds open <玩家> <商店>
+/mcds show <玩家> <商店>
+/mcds quota reset player <玩家|*> <商店|*>
+/mcds quota reset server <商店|*>
+/mcds refresh <商店|*> [--player <玩家>]
+/mcds reload
+/mcds validate
 ```
 
 普通玩家没有默认可用命令。详细权限节点见 `plugin.yml`。

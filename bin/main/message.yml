@@ -5,19 +5,19 @@ command:
   player-not-found: '[prefix]&c找不到玩家 [player]，该玩家需要至少进入过一次服务器。'
   shop-not-found: '[prefix]&c不存在商店 [shop]。'
   player-only: '[prefix]&c该操作需要指定在线玩家。'
-  invalid-usage: '[prefix]&c命令参数不正确，请使用 /mds 查看帮助。'
+  invalid-usage: '[prefix]&c命令参数不正确，请使用 /mcds 查看帮助。'
   success: '[prefix]&a操作已完成。'
   failed: '[prefix]&c操作失败：[reason]'
   reload-success: '[prefix]&a配置已重新加载，共加载 [shops] 个商店。'
   validate-success: '[prefix]&a配置检查完成，共有 [shops] 个有效商店。'
   help:
-    - '&6/mds open <玩家> <商店> &7- 打开当前随机商店'
-    - '&6/mds show <玩家> <商店> &7- 展示全部候选商品'
-    - '&6/mds quota reset player <玩家|*> <商店|*> &7- 重置个人限购'
-    - '&6/mds quota reset server <商店|*> &7- 重置全服库存'
-    - '&6/mds refresh <商店|*> [--player <玩家>] &7- 刷新商店'
-    - '&6/mds reload &7- 重新加载配置'
-    - '&6/mds validate &7- 检查商店配置'
+    - '&6/mcds open <玩家> <商店> &7- 打开当前随机商店'
+    - '&6/mcds show <玩家> <商店> &7- 展示全部候选商品'
+    - '&6/mcds quota reset player <玩家|*> <商店|*> &7- 重置个人限购'
+    - '&6/mcds quota reset server <商店|*> &7- 重置全服库存'
+    - '&6/mcds refresh <商店|*> [--player <玩家>] &7- 刷新商店'
+    - '&6/mcds reload &7- 重新加载配置'
+    - '&6/mcds validate &7- 检查商店配置'
 
 shop:
   sort:
