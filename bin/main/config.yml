@@ -10,6 +10,8 @@ timezone: 'Asia/Shanghai'
 placeholder:
   # %mcds_next_refresh_time_<商店ID>% 的日期时间格式。
   next-refresh-time-format: 'yyyy-MM-dd HH:mm:ss'
+  # %mcds_next_refresh_remaining_<商店ID>% 返回 天数 天 时:分:秒。
+  # %mcds_next_refresh_timestamp_<商店ID>% 返回 Unix 秒级时间戳。
 
 database:
   # 可用类型：SQLite、MySQL。
