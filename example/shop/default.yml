@@ -11,10 +11,15 @@ default_sellshop:
 
   # 刷新设置
   refresh:
-    # 类型，有daily和weekly和monthly三种
+    # 类型，有timely、daily、weekly和monthly四种
+    # 当为timely时，time则是计时而不是时间点
+    # 例如timely类型下，
+    # 当time为'2:00:00'代表每隔2小时刷新一次
+    # 当time为'0:30:00'代表每隔30分钟刷新一次
+    # 以1970年1月1日00:00:00为间隔起点
     # 当为weekly时，需要写为'weekly:1'，代表每周一
     # 'weekly:1,2,5,6'代表每周一、二、五、六刷新，允许写1~7，写错需要报错提示
-    # 当为monthly时，需要写为'weekly:1'，代表每个月第一天
+    # 当为monthly时，需要写为'monthly:1'，代表每个月第一天
     # 'monthly:1,2,5,30'代表每个月的第一、二、五、三十天刷新，允许写1~31，写错需要报错提示
     # 像写30的情况下，二月会无法生效，因为二月只有27或28天
     type: 'daily'

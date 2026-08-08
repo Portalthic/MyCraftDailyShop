@@ -1,6 +1,6 @@
 # MyCraftDailyShop
 
-适用于 Paper 1.12.2 的每日随机商店插件。插件版本为 `1.1.2`。
+适用于 Paper 1.12.2 的每日随机商店插件。插件版本为 `1.1.4`。
 
 ## 依赖
 
@@ -17,7 +17,7 @@ $env:JAVA_HOME='C:\Program Files\Java\jdk-1.8'
 .\gradlew.bat clean test shadowJar
 ```
 
-成品位于 `build/libs/MyCraftDailyShop-1.1.2.jar`。
+成品位于 `build/libs/MyCraftDailyShop-1.1.4.jar`。
 
 ## 配置
 
@@ -36,9 +36,11 @@ plugins/MyCraftDailyShop/
 
 商品使用 `物品库:物品ID` 格式，例如 `zaphkiel:镇好剑`。商店中的 `sell` 表示商店向玩家出售，`buy` 表示商店向玩家收购。
 
-## 管理命令
+刷新类型支持 `timely`、`daily`、`weekly:1,3,5` 和 `monthly:1,15`。`timely` 的 `time` 是 `H:mm:ss` 格式的刷新间隔，例如 `2:00:00` 表示每两小时刷新一次；周期以配置时区中的 `1970-01-01 00:00:00` 为固定起点，不会因服务器重启而重新计时。
 
-插件短命令为 `/mcds`（MyCraftDailyShop）。完整命令 `/mycraftdailyshop` 同样可用，旧短命令 `/mds` 已移除。
+安装 PlaceholderAPI 后，可使用 `%mcds_next_refresh_time_<商店ID>%` 显示指定商店的下次刷新时间。输出格式由 `placeholder.next-refresh-time-format` 配置。
+
+## 管理命令
 
 ```text
 /mcds open <玩家> <商店>

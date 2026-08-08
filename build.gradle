@@ -4,12 +4,13 @@ plugins {
 }
 
 group = 'com.mycraftdailyshop'
-version = '1.1.2'
+version = '1.1.4'
 
 repositories {
     mavenCentral()
     maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
     maven { url = 'https://jitpack.io' }
+    maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
 }
 
 dependencies {
@@ -17,6 +18,7 @@ dependencies {
         exclude group: 'net.md-5', module: 'bungeecord-chat'
     }
     compileOnly 'com.github.MilkBowl:VaultAPI:1.7'
+    compileOnly 'me.clip:placeholderapi:2.11.6'
     implementation 'org.xerial:sqlite-jdbc:3.42.0.0'
     implementation 'com.zaxxer:HikariCP:4.0.3'
     implementation 'com.mysql:mysql-connector-j:8.0.33'

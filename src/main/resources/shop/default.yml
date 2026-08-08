@@ -7,7 +7,9 @@ default_sellshop:
   scene: 'personal'
 
   refresh:
-    # 支持 daily、weekly:1,3,5、monthly:1,15 等格式。
+    # 支持 timely、daily、weekly:1,3,5、monthly:1,15 等格式。
+    # timely 的 time 表示刷新间隔，例如 2:00:00 为每两小时，0:30:00 为每半小时。
+    # timely 周期以配置时区中的 1970-01-01 00:00:00 为起点。
     type: 'daily'
     time: '17:00:00'
 

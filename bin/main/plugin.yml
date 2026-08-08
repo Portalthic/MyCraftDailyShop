@@ -1,6 +1,6 @@
 name: MyCraftDailyShop
 main: com.mycraftdailyshop.MyCraftDailyShopPlugin
-version: 1.0.4
+version: 1.1.4
 author: MyCraft
 description: Configurable daily random shops for Paper 1.12.2.
 depend: [Vault, Zaphkiel]
@@ -8,7 +8,7 @@ softdepend: [PlaceholderAPI]
 commands:
   mycraftdailyshop:
     description: MyCraftDailyShop administrator command
-    aliases: [mds]
+    aliases: [mcds]
     permission: mycraftdailyshop.admin
 permissions:
   mycraftdailyshop.admin:

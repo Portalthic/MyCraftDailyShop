@@ -6,6 +6,11 @@ shop:
 # 商店刷新周期使用的时区。
 timezone: 'Asia/Shanghai'
 
+# PlaceholderAPI 输出设置。
+placeholder:
+  # %mcds_next_refresh_time_<商店ID>% 的日期时间格式。
+  next-refresh-time-format: 'yyyy-MM-dd HH:mm:ss'
+
 database:
   # 可用类型：SQLite、MySQL。
   type: 'SQLite'

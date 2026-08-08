@@ -8,10 +8,12 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 
 public final class MessageService {
@@ -29,11 +31,27 @@ public final class MessageService {
     }
 
     public void load() {
+        migrateLegacyCommandPrefix();
         messages = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "message.yml"));
         InputStream resource = plugin.getResource("message.yml");
         if (resource != null) try (InputStreamReader reader = new InputStreamReader(resource, StandardCharsets.UTF_8)) {
             messages.setDefaults(YamlConfiguration.loadConfiguration(reader));
         } catch (java.io.IOException ignored) { }
+    }
+
+    /** Keeps existing server message files in sync with the renamed short command. */
+    private void migrateLegacyCommandPrefix() {
+        File file = new File(plugin.getDataFolder(), "message.yml");
+        if (!file.isFile()) return;
+        try {
+            String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            if (content.contains("/mds")) {
+                Files.write(file.toPath(), content.replace("/mds", "/mcds").getBytes(StandardCharsets.UTF_8));
+                plugin.getLogger().info("已将 message.yml 中的旧命令 /mds 更新为 /mcds。");
+            }
+        } catch (IOException ex) {
+            plugin.getLogger().warning("无法更新 message.yml 中的旧命令提示: " + ex.getMessage());
+        }
     }
 
     public void send(CommandSender sender, String path, Map<String, String> variables) {

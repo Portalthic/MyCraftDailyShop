@@ -11,6 +11,7 @@ public final class ShopConfig {
     private final ShopScene scene;
     private final String refreshType;
     private final LocalTime refreshTime;
+    private final long refreshIntervalMillis;
     private final String restockMessage;
     private final String noShopsMessage;
     private final String openSound;
@@ -21,7 +22,7 @@ public final class ShopConfig {
     private final Map<Character, IconConfig> icons;
     private final List<ProductConfig> products;
 
-    public ShopConfig(String id, ShopType type, ShopScene scene, String refreshType, LocalTime refreshTime,
+    public ShopConfig(String id, ShopType type, ShopScene scene, String refreshType, LocalTime refreshTime, long refreshIntervalMillis,
                       String restockMessage, String noShopsMessage, String openSound, String successSound,
                       String failSound, String title, List<String> layout, Map<Character, IconConfig> icons,
                       List<ProductConfig> products) {
@@ -30,6 +31,7 @@ public final class ShopConfig {
         this.scene = scene;
         this.refreshType = refreshType;
         this.refreshTime = refreshTime;
+        this.refreshIntervalMillis = refreshIntervalMillis;
         this.restockMessage = restockMessage;
         this.noShopsMessage = noShopsMessage;
         this.openSound = openSound;
@@ -46,6 +48,7 @@ public final class ShopConfig {
     public ShopScene getScene() { return scene; }
     public String getRefreshType() { return refreshType; }
     public LocalTime getRefreshTime() { return refreshTime; }
+    public long getRefreshIntervalMillis() { return refreshIntervalMillis; }
     public String getRestockMessage() { return restockMessage; }
     public String getNoShopsMessage() { return noShopsMessage; }
     public String getOpenSound() { return openSound; }

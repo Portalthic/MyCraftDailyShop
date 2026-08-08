@@ -33,6 +33,7 @@ public final class MyCraftDailyShopPlugin extends JavaPlugin {
             shopService=new ShopService(this,registry,database,economy,Collections.singletonList(zaphkiel));
             ShopGui gui=new ShopGui(this,shopService,messages);
             MaintenanceScheduler scheduler=new MaintenanceScheduler(this,registry,shopService,database,messages);scheduler.start();
+            if(getServer().getPluginManager().isPluginEnabled("PlaceholderAPI"))new McdsPlaceholderExpansion(this,registry).register();
             getServer().getPluginManager().registerEvents(gui,this);
             getServer().getPluginManager().registerEvents(new PlayerListener(shopService, gui),this);
             PluginCommand command=getCommand("mycraftdailyshop");DailyShopCommand executor=new DailyShopCommand(this,registry,shopService,gui,messages,scheduler);command.setExecutor(executor);command.setTabCompleter(executor);

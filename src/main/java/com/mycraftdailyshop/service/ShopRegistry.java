@@ -58,7 +58,10 @@ public final class ShopRegistry {
         ShopScene scene = ShopScene.parse(required(root, "scene"));
         String refreshType = required(root, "refresh.type");
         refreshCalculator.validate(refreshType);
-        LocalTime refreshTime = LocalTime.parse(required(root, "refresh.time"));
+        String refreshValue = required(root, "refresh.time");
+        boolean timely = refreshType.trim().equalsIgnoreCase("timely");
+        long refreshIntervalMillis = timely ? refreshCalculator.parseTimelyInterval(refreshValue) : 0L;
+        LocalTime refreshTime = timely ? LocalTime.MIDNIGHT : LocalTime.parse(refreshValue);
         List<String> layout = new ArrayList<>(root.getStringList("layout"));
         if (layout.isEmpty() || layout.size() > 6) throw new IllegalArgumentException("layout 必须包含 1 到 6 行");
         for (int i = 0; i < layout.size(); i++) {
@@ -105,7 +108,7 @@ public final class ShopRegistry {
             products.add(new ProductConfig(index, required(section, "id"), money, amount, personalLimit, serverLimit, section.getDouble("chance", 1D), parseEnchantments(section, index)));
         }
         products.sort(Comparator.comparingInt(ProductConfig::getIndex));
-        ShopConfig shop = new ShopConfig(id, type, scene, refreshType, refreshTime,
+        ShopConfig shop = new ShopConfig(id, type, scene, refreshType, refreshTime, refreshIntervalMillis,
                 root.getString("message.restock"), root.getString("message.noshops"), root.getString("sound.open_shop"),
                 root.getString("sound.success"), root.getString("sound.fail"), root.getString("title", id), layout, icons, products);
         validateSound(shop.getOpenSound(), "sound.open_shop");
