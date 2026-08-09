@@ -61,13 +61,13 @@ plugins/MyCraftDailyShop/
 
 普通玩家没有默认可用命令。详细权限节点见 `plugin.yml`。
 
-# 致谢
+## 致谢
 
-- AI辅助
+#### AI辅助
 ChatGPT-5.6 Sol
 Codex
-<br>
-- 我的手艺制作组测试组成员（按首字母排序）bilibiliHMP
+#### 我的手艺测试组成员
+bilibiliHMP
 Hermois
 licha
 qingye
