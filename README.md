@@ -1,6 +1,7 @@
 # MyCraftDailyShop
 
-适用于 Paper 1.12.2 的每日随机商店插件。插件版本为 `1.1.5`。
+适用于 Paper 1.12.2 的每日随机商店插件。
+插件版本为 `1.1.5`。
 
 ## 依赖
 
@@ -38,9 +39,13 @@ plugins/MyCraftDailyShop/
 
 刷新类型支持 `timely`、`daily`、`weekly:1,3,5` 和 `monthly:1,15`。`timely` 的 `time` 是 `H:mm:ss` 格式的刷新间隔，例如 `2:00:00` 表示每两小时刷新一次；周期以配置时区中的 `1970-01-01 00:00:00` 为固定起点，不会因服务器重启而重新计时。
 
-安装 PlaceholderAPI 后，可使用 `%mcds_next_refresh_time_<商店ID>%` 显示指定商店的下次刷新时间。输出格式由 `placeholder.next-refresh-time-format` 配置。
+## 可用占位符
 
-还可使用 `%mcds_next_refresh_remaining_<商店ID>%` 显示剩余时间，以及 `%mcds_next_refresh_timestamp_<商店ID>%` 获取下次刷新时间的 Unix 秒级时间戳。
+```
+%mcds_next_refresh_time_<商店ID>%  # 显示指定商店的下次刷新时间（输出格式由 config.yml 中 placeholder.next-refresh-time-format 控制）
+%mcds_next_refresh_remaining_<商店ID>%  # 显示剩余时间
+%mcds_next_refresh_timestamp_<商店ID>%  # 获取下次刷新时间的 Unix 秒级时间戳
+```
 
 ## 管理命令
 
@@ -55,3 +60,15 @@ plugins/MyCraftDailyShop/
 ```
 
 普通玩家没有默认可用命令。详细权限节点见 `plugin.yml`。
+
+# 致谢
+
+- AI辅助
+ChatGPT-5.6 Sol
+Codex
+<br>
+- 我的手艺制作组测试组成员（按首字母排序）bilibiliHMP
+Hermois
+licha
+qingye
+Xtlylg
