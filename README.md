@@ -79,9 +79,10 @@ plugins/MyCraftDailyShop/
 - ChatGPT-5.6 Sol
 - Codex
 
-#### 我的手艺测试组成员
-- bilibiliHMP
-- Hermois
-- licha
-- qingye
-- Xtlylg
+#### 我的手艺
+- 测试组 bilibiliHMP
+- 测试组 Hermois
+- 测试组 licha
+- 测试组 qingye
+- 测试组 Xtlylg
+- 广大冒险者
