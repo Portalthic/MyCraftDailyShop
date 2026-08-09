@@ -1,13 +1,19 @@
 # MyCraftDailyShop
 
-适用于 Paper 1.12.2 的每日随机商店插件。
+适用于 `Paper 1.12.2` 的每日随机商店插件。
 插件版本为 `1.1.5`。
 
 ## 依赖
 
+#### 硬依赖
+
 - Zaphkiel 2.0.24
-- Vault 与一个 Vault 兼容经济插件
-- PlaceholderAPI（可选；安装后解析配置中的 PAPI 占位符）
+- Vault
+- 与 Vault 兼容经济插件
+
+#### 软依赖
+
+- PlaceholderAPI（解析配置中的 PAPI 占位符）
 
 ## 构建
 
@@ -59,7 +65,13 @@ plugins/MyCraftDailyShop/
 /mcds validate
 ```
 
-普通玩家没有默认可用命令。详细权限节点见 `plugin.yml`。
+## 玩家命令
+
+普通玩家没有默认可用命令。
+
+## 权限管理
+
+详细权限节点见 `plugin.yml`。
 
 ## 致谢
 
