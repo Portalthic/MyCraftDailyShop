@@ -64,11 +64,12 @@ plugins/MyCraftDailyShop/
 ## 致谢
 
 #### AI辅助
-ChatGPT-5.6 Sol
-Codex
+- ChatGPT-5.6 Sol
+- Codex
+
 #### 我的手艺测试组成员
-bilibiliHMP
-Hermois
-licha
-qingye
-Xtlylg
+- bilibiliHMP
+- Hermois
+- licha
+- qingye
+- Xtlylg
